@@ -91,16 +91,14 @@ vim.opt.listchars = 'tab:^ ,nbsp:¬,extends:»,precedes:«,trail:•'
 --
 -------------------------------------------------------------------------------
 -- quick-open
-vim.keymap.set('', '<C-p>', '<cmd>Files<cr>')
-vim.keymap.set('', '<leader>ff', '<cmd>Files<cr>')
+-- CHECK: fzf-lua section for fuzzy finding commands
 
 -- Disable netrw
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
 -- Nvim Tree toggle / focus
-vim.keymap.set('', '<leader>E', '<cmd>NvimTreeOpen<cr>')
-vim.keymap.set('', '<leader>e', '<cmd>NvimTreeToggle<cr>')
+vim.keymap.set('', '<leader>e', '<cmd>Neotree toggle<cr>')
 
 -- search buffers
 vim.keymap.set('n', '<leader>;', '<cmd>Buffers<cr>')
@@ -131,8 +129,8 @@ vim.keymap.set('n', ';', ':')
 -- vim.keymap.set('l', '<C-k>', '<Esc>')
 -- vim.keymap.set('t', '<C-k>', '<Esc>')
 -- Ctrl+h to stop searching
-vim.keymap.set('v', '<C-h>', '<cmd>nohlsearch<cr>')
-vim.keymap.set('n', '<C-h>', '<cmd>nohlsearch<cr>')
+-- vim.keymap.set('v', '<C-h>', '<cmd>nohlsearch<cr>')
+-- vim.keymap.set('n', '<C-h>', '<cmd>nohlsearch<cr>')
 -- Jump to start and end of line using the home row keys
 vim.keymap.set('', 'H', '^')
 vim.keymap.set('', 'L', '$')
@@ -152,7 +150,7 @@ vim.opt.clipboard = 'unnamedplus'
 
 -- local paste_command = string.format('<cmd>read !%s<cr>', pastecmd)
 -- local copy_command = string.format('<cmd>w !pbcopy<cr><cr>', copycmd)
--- 
+--
 -- vim.keymap.set('n', '<leader>p', paste_command)
 -- vim.keymap.set('n', '<leader>c', copy_command)
 -- vim.keymap.set('v', '<leader>p', paste_command)
@@ -311,7 +309,11 @@ require("lazy").setup({
 			vim.api.nvim_set_hl(0, 'Comment', bools)
 			-- Make it clearly visible which argument we're at.
 			local marked = vim.api.nvim_get_hl(0, { name = 'PMenu' })
-			vim.api.nvim_set_hl(0, 'LspSignatureActiveParameter', { fg = marked.fg, bg = marked.bg, ctermfg = marked.ctermfg, ctermbg = marked.ctermbg, bold = true })
+			vim.api.nvim_set_hl(
+				0, 
+				'LspSignatureActiveParameter', 
+				{ fg = marked.fg, bg = marked.bg, ctermfg = marked.ctermfg, ctermbg = marked.ctermbg, bold = true }
+			)
 			-- XXX
 			-- Would be nice to customize the highlighting of warnings and the like to make
 			-- them less glaring. But alas
@@ -342,11 +344,25 @@ require("lazy").setup({
 					filename = 'LightlineFilename'
 				},
 			}
+			-- function LightlineFilenameInLua(opts)
+			-- 	if vim.fn.expand('%:t') == '' then
+			-- 		return '[No Name]'
+			-- 	else
+			-- 		return vim.fn.getreg('%')
+			-- 	end
+			-- end
 			function LightlineFilenameInLua(opts)
-				if vim.fn.expand('%:t') == '' then
+				local filename = vim.fn.expand('%:t')
+				if filename == '' then
 					return '[No Name]'
 				else
-					return vim.fn.getreg('%')
+					local fullpath = vim.fn.expand('%:p')
+					local home = vim.fn.expand('~')
+					if string.find(fullpath, '^' .. home) then
+						return '~' .. string.sub(fullpath, #home + 1)
+					else
+						return fullpath
+					end
 				end
 			end
 			-- https://github.com/itchyny/lightline.vim/issues/657
@@ -387,48 +403,65 @@ require("lazy").setup({
 		end
 	},
 	{
-		"nvim-tree/nvim-tree.lua",
-		version = "*",
-		lazy = false,
+		"nvim-neo-tree/neo-tree.nvim",
+		branch = "v3.x",
 		dependencies = {
-			"nvim-tree/nvim-web-devicons",
+			"nvim-lua/plenary.nvim",
+			"MunifTanjim/nui.nvim",
+			"nvim-tree/nvim-web-devicons", -- optional, but recommended
 		},
+		lazy = false, -- neo-tree will lazily load itself
+	},
+	{
+		"ibhagwan/fzf-lua",
+		-- optional for icon support
+		dependencies = { "nvim-tree/nvim-web-devicons" },
+		-- or if using mini.icons/mini.nvim
+		-- dependencies = { "echasnovski/mini.icons" },
+		opts = {},
 		config = function()
-			require("nvim-tree").setup {}
+			local fzflua = require('fzf-lua')
+			fzflua.setup()
+			vim.keymap.set('', '<leader>ff', fzflua.files)
+			vim.keymap.set('', '<leader>fw', fzflua.live_grep_native)
+			vim.keymap.set('', '<leader>fG', fzflua.global)
+
+			-- Search in current buffer
+			vim.keymap.set('', '<leader>f/', fzflua.lgrep_curbuf)
 		end,
 	},
 	-- fzf support for ^p
-	{
-		'junegunn/fzf.vim',
-		dependencies = {
-			{ 'junegunn/fzf', dir = '~/.fzf', build = './install --all' },
-		},
-		config = function()
-			-- stop putting a giant window over my editor
-			vim.g.fzf_layout = { down = '~40%' }
-
-			-- vim.g.fzf_vim = {}
-			-- vim.g.fzf_vim.preview_window = { right = '~50%' }
-			-- when using :Files, pass the file list through
-			--
-			--   https://github.com/jonhoo/proximity-sort
-			--
-			-- to prefer files closer to the current file.
-			function list_cmd()
-				local base = vim.fn.fnamemodify(vim.fn.expand('%'), ':h:.:S')
-				if base == '.' then
-					-- if there is no current file,
-					-- proximity-sort can't do its thing
-					return 'fd --hidden --exclude \'.git\' --type file --follow'
-				else
-					return vim.fn.printf('fd --hidden --exclude \'.git\' --type file --follow | proximity-sort %s', vim.fn.shellescape(vim.fn.expand('%')))
-				end
-			end
-			-- vim.api.nvim_create_user_command('Files', function(arg)
-			-- 	vim.fn['fzf#vim#files'](arg.args, { source = list_cmd(), options = '--scheme=path --tiebreak=index' }, arg.bang)
-			-- end, { bang = true, nargs = '?', complete = "dir" })
-		end
-	},
+-- 	{
+-- 		'junegunn/fzf.vim',
+-- 		dependencies = {
+-- 			{ 'junegunn/fzf', dir = '~/.fzf', build = './install --all' },
+-- 		},
+-- 		config = function()
+-- 			-- stop putting a giant window over my editor
+-- 			vim.g.fzf_layout = { down = '~40%' }
+-- 
+-- 			-- vim.g.fzf_vim = {}
+-- 			-- vim.g.fzf_vim.preview_window = { right = '~50%' }
+-- 			-- when using :Files, pass the file list through
+-- 			--
+-- 			--   https://github.com/jonhoo/proximity-sort
+-- 			--
+-- 			-- to prefer files closer to the current file.
+-- 			function list_cmd()
+-- 				local base = vim.fn.fnamemodify(vim.fn.expand('%'), ':h:.:S')
+-- 				if base == '.' then
+-- 					-- if there is no current file,
+-- 					-- proximity-sort can't do its thing
+-- 					return 'fd --hidden --exclude \'.git\' --type file --follow'
+-- 				else
+-- 					return vim.fn.printf('fd --hidden --exclude \'.git\' --type file --follow | proximity-sort %s', vim.fn.shellescape(vim.fn.expand('%')))
+-- 				end
+-- 			end
+-- 			-- vim.api.nvim_create_user_command('Files', function(arg)
+-- 			-- 	vim.fn['fzf#vim#files'](arg.args, { source = list_cmd(), options = '--scheme=path --tiebreak=index' }, arg.bang)
+-- 			-- end, { bang = true, nargs = '?', complete = "dir" })
+-- 		end
+-- 	},
 	-- LSP
 	{
 		'neovim/nvim-lspconfig',
@@ -470,6 +503,7 @@ require("lazy").setup({
 			end
 
 			vim.lsp.enable('gopls')
+			vim.lsp.enable('vtsls')
 
 			-- Ruff for Python
 			if vim.fn.executable('ruff-lsp') == 1 then
