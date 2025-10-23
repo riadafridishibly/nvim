@@ -75,7 +75,6 @@ vim.keymap.set("n", "?", "?\\v")
 
 -- Utility
 vim.keymap.set("n", "<leader>,", ":set invlist<cr>")
-vim.keymap.set("n", "<leader>e", "<cmd>Neotree toggle<cr>")
 vim.keymap.set("n", "<leader>m", "ct_")
 vim.keymap.set("", "<F1>", "<Esc>")
 vim.keymap.set("i", "<F1>", "<Esc>")
@@ -91,11 +90,6 @@ vim.keymap.set("n", "j", "gj")
 vim.keymap.set("n", "k", "gk")
 
 
--- vim.keymap.set("n", "gra", function()
---   vim.lsp.buf.code_action({
---     border = "rounded",
---   })
--- end, { desc = "Code actions" })
 
 -- Clipboard
 vim.opt.clipboard = "unnamedplus"
@@ -151,6 +145,7 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 	callback = function() vim.bo.filetype = "markdown" end,
 })
 
+
 -------------------------------------------------------------------------------
 -- Plugin Setup (lazy.nvim)
 -------------------------------------------------------------------------------
@@ -164,6 +159,16 @@ vim.opt.rtp:prepend(lazypath)
 
 
 require("lazy").setup({
+	{
+		"folke/snacks.nvim",
+		priority = 1000,
+		lazy = false,
+		opts = {
+			input = { enabled = true },
+			styles = { input = { relative = "cursor" } }
+		},
+	},
+
 	{
 		'sainnhe/gruvbox-material',
 		lazy = false,
@@ -189,33 +194,12 @@ require("lazy").setup({
 		config = function() require("neoscroll").setup({ duration_multiplier = 0.4 }) end,
 	},
 
-	-- Statusline
 	{
-		"itchyny/lightline.vim",
-		lazy = false,
+		'nvim-mini/mini.statusline',
+		version = false,
 		config = function()
-			vim.o.showmode = false
-			vim.g.lightline = {
-				active = {
-					left = { { "mode", "paste" }, { "readonly", "filename", "modified" } },
-					right = { { "lineinfo" }, { "percent" }, { "fileencoding", "filetype" } },
-				},
-				component_function = { filename = "LightlineFilename" },
-			}
-
-			function LightlineFilenameInLua()
-				local filename = vim.fn.expand("%:t")
-				if filename == "" then return "[No Name]" end
-				local fullpath, home = vim.fn.expand("%:p"), vim.fn.expand("~")
-				return fullpath:gsub("^" .. home, "~")
-			end
-
-			vim.api.nvim_exec([[
-				function! g:LightlineFilename()
-					return v:lua.LightlineFilenameInLua()
-				endfunction
-			]], true)
-		end,
+			require 'mini.statusline'.setup {}
+		end
 	},
 
 	-- Treesitter
@@ -224,7 +208,7 @@ require("lazy").setup({
 		build = ":TSUpdate",
 		config = function()
 			require("nvim-treesitter.configs").setup({
-				ensure_installed = { "lua", "vim", "vimdoc", "markdown", "typescript", "javascript", "go", "c" },
+				ensure_installed = { "lua", "vim", "vimdoc", "typescript", "javascript", "go", "c" },
 				highlight = {
 					enable = true,
 					disable = function(_, buf)
@@ -245,15 +229,20 @@ require("lazy").setup({
 		"nvim-neo-tree/neo-tree.nvim",
 		branch = "v3.x",
 		dependencies = { "nvim-lua/plenary.nvim", "MunifTanjim/nui.nvim", "nvim-tree/nvim-web-devicons" },
+		lazy = false,
 		config = function()
 			require("neo-tree").setup({
+				close_if_last_window = true,
 				filesystem = {
 					filtered_items = { visible = true, hide_dotfiles = false, hide_gitignored = false },
 					follow_current_file = { enabled = true },
 				},
 			})
+
+			vim.keymap.set("n", "<leader>e", "<cmd>Neotree toggle<cr>")
 		end,
 	},
+
 
 	-- Fuzzy finder
 	{
@@ -277,7 +266,7 @@ require("lazy").setup({
 
 			fzflua.register_ui_select()
 
-			vim.keymap.set("", "<leader>ff", fzflua.files, {desc = "Find files"})
+			vim.keymap.set("", "<leader>ff", fzflua.files, { desc = "Find files" })
 			vim.keymap.set("", "<leader>fw", fzflua.live_grep_native)
 			vim.keymap.set("", "<leader>fb", fzflua.buffers)
 			vim.keymap.set("", "<leader>f/", fzflua.lgrep_curbuf)
@@ -288,6 +277,7 @@ require("lazy").setup({
 			vim.keymap.set("n", "<leader>lD", fzflua.lsp_workspace_diagnostics,
 				{ desc = "Workspace diagnostics (fzf-lua)" })
 			vim.keymap.set("n", "<leader>lr", fzflua.lsp_references, { desc = "LSP references (fzf-lua)" })
+			vim.keymap.set("n", "grr", fzflua.lsp_references, { desc = "LSP references (fzf-lua)" })
 			vim.keymap.set("n", "<leader>li", fzflua.lsp_implementations, { desc = "LSP implementations (fzf-lua)" })
 		end,
 	},
@@ -310,7 +300,9 @@ require("lazy").setup({
 			})
 
 			vim.lsp.enable("gopls")
-			-- vim.lsp.enable("vtsls")
+
+			vim.lsp.config("vtsls", {})
+			vim.lsp.enable("vtsls")
 
 			vim.lsp.config['luals'] = {
 				-- Command and arguments to start the server.
@@ -345,13 +337,14 @@ require("lazy").setup({
 			vim.keymap.set("n", "]d", vim.diagnostic.goto_next)
 			vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist)
 
+
 			vim.api.nvim_create_autocmd("LspAttach", {
 				group = vim.api.nvim_create_augroup("UserLspConfig", {}),
 				callback = function(ev)
 					local opts = { buffer = ev.buf }
 					vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
 					vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-					vim.keymap.set("n", "<leader>r", vim.lsp.buf.rename, opts)
+					vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts) -- also grn
 					vim.keymap.set({ "n", "v" }, "<leader>a", vim.lsp.buf.code_action, opts)
 					vim.keymap.set("n", "<leader>lf", vim.lsp.buf.format)
 				end,
