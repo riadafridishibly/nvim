@@ -277,29 +277,18 @@ require("lazy").setup({
 
 			fzflua.register_ui_select()
 
-			vim.keymap.set("", "<leader>ff", fzflua.files)
+			vim.keymap.set("", "<leader>ff", fzflua.files, {desc = "Find files"})
 			vim.keymap.set("", "<leader>fw", fzflua.live_grep_native)
 			vim.keymap.set("", "<leader>fb", fzflua.buffers)
 			vim.keymap.set("", "<leader>f/", fzflua.lgrep_curbuf)
-			vim.keymap.set("", "gra", fzflua.lsp_code_actions)
-			vim.keymap.set("", "<leader>la", fzflua.lsp_code_actions)
-
-			vim.keymap.set("n", "<leader>ld",
-				function() require("fzf-lua").lsp_document_diagnostics() end,
-				{ desc = "Workspace diagnostics (fzf-lua)" }
-			)
-			vim.keymap.set("n", "<leader>lD",
-				function() require("fzf-lua").lsp_workspace_diagnostics() end,
-				{ desc = "Workspace diagnostics (fzf-lua)" }
-			)
-			vim.keymap.set("n", "<leader>lr",
-				function() require("fzf-lua").lsp_references() end,
-				{ desc = "LSP references (fzf-lua)" }
-			)
-			vim.keymap.set("n", "<leader>li",
-				function() require("fzf-lua").lsp_implementations() end,
-				{ desc = "LSP implementations (fzf-lua)" }
-			)
+			vim.keymap.set("", "gra", fzflua.lsp_code_actions, { desc = "Document codeaction" })
+			vim.keymap.set("", "<leader>la", fzflua.lsp_code_actions, { desc = "Document codeaction" })
+			vim.keymap.set("n", "<leader>ld", fzflua.lsp_document_diagnostics,
+				{ desc = "Document diagnostics (fzf-lua)" })
+			vim.keymap.set("n", "<leader>lD", fzflua.lsp_workspace_diagnostics,
+				{ desc = "Workspace diagnostics (fzf-lua)" })
+			vim.keymap.set("n", "<leader>lr", fzflua.lsp_references, { desc = "LSP references (fzf-lua)" })
+			vim.keymap.set("n", "<leader>li", fzflua.lsp_implementations, { desc = "LSP implementations (fzf-lua)" })
 		end,
 	},
 
