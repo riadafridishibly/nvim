@@ -90,6 +90,13 @@ vim.keymap.set("n", "<right>", ":bn<cr>")
 vim.keymap.set("n", "j", "gj")
 vim.keymap.set("n", "k", "gk")
 
+
+-- vim.keymap.set("n", "gra", function()
+--   vim.lsp.buf.code_action({
+--     border = "rounded",
+--   })
+-- end, { desc = "Code actions" })
+
 -- Clipboard
 vim.opt.clipboard = "unnamedplus"
 
@@ -196,6 +203,7 @@ require("lazy").setup({
 				component_function = { filename = "LightlineFilename" },
 				-- colorscheme = "gruvbox",
 			}
+
 			function LightlineFilenameInLua()
 				local filename = vim.fn.expand("%:t")
 				if filename == "" then return "[No Name]" end
@@ -254,11 +262,24 @@ require("lazy").setup({
 		dependencies = { "nvim-tree/nvim-web-devicons" },
 		config = function()
 			local fzflua = require("fzf-lua")
-			fzflua.setup({ "ivy" })
+			fzflua.setup({
+				"ivy",
+				codeaction = {
+					diff_opts = { ctxlen = 3 },
+				},
+				codeaction_native = {
+					diff_opts = { ctxlen = 3 },
+				},
+			})
+
+			fzflua.register_ui_select()
+
 			vim.keymap.set("", "<leader>ff", fzflua.files)
 			vim.keymap.set("", "<leader>fw", fzflua.live_grep_native)
 			vim.keymap.set("", "<leader>fb", fzflua.buffers)
 			vim.keymap.set("", "<leader>f/", fzflua.lgrep_curbuf)
+			vim.keymap.set("", "gra", fzflua.lsp_code_actions)
+			vim.keymap.set("", "<leader>la", fzflua.lsp_code_actions)
 		end,
 	},
 
@@ -337,19 +358,47 @@ require("lazy").setup({
 			"hrsh7th/cmp-nvim-lsp",
 			"hrsh7th/cmp-buffer",
 			"hrsh7th/cmp-path",
+
+			"L3MON4D3/LuaSnip",
+			"saadparwaiz1/cmp_luasnip",
 		},
 		config = function()
 			local cmp = require("cmp")
+
+			local luasnip = require("luasnip")
+
+			-- Make sure LuaSnip is initialized
+			require("luasnip.loaders.from_vscode").lazy_load()
+			require("luasnip.loaders.from_lua").lazy_load()
+
+			local go_snippets = require("snippets.go")
+			-- 🔹 Define the iferr snippet for Go
+			luasnip.add_snippets("go", go_snippets)
+
+
 			cmp.setup({
-				snippet = { expand = function(args) vim.snippet.expand(args.body) end },
+				snippet = {
+					expand = function(args)
+						luasnip.lsp_expand(args.body)
+					end,
+				},
+
+				preselect = cmp.PreselectMode.Item, -- auto-select first completion item
+
+				-- snippet = { expand = function(args) vim.snippet.expand(args.body) end },
 				mapping = cmp.mapping.preset.insert({
 					["<C-b>"] = cmp.mapping.scroll_docs(-4),
 					["<C-f>"] = cmp.mapping.scroll_docs(4),
 					["<C-Space>"] = cmp.mapping.complete(),
 					["<C-e>"] = cmp.mapping.abort(),
-					["<CR>"] = cmp.mapping.confirm({ select = true }),
+					["<C-y>"] = cmp.mapping.confirm({ select = true }),
 				}),
-				sources = cmp.config.sources({ { name = "nvim_lsp" } }, { { name = "path" } }),
+				sources = cmp.config.sources({
+					{ name = "nvim_lsp" },
+					{ name = "luasnip" },
+					{ name = "buffer" },
+					{ name = "path" },
+				}),
 				experimental = { ghost_text = true },
 			})
 			cmp.setup.cmdline(":", { sources = cmp.config.sources({ { name = "path" } }) })
