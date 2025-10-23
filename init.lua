@@ -201,7 +201,6 @@ require("lazy").setup({
 					right = { { "lineinfo" }, { "percent" }, { "fileencoding", "filetype" } },
 				},
 				component_function = { filename = "LightlineFilename" },
-				-- colorscheme = "gruvbox",
 			}
 
 			function LightlineFilenameInLua()
@@ -270,6 +269,10 @@ require("lazy").setup({
 				codeaction_native = {
 					diff_opts = { ctxlen = 3 },
 				},
+				winopts = {
+					border = "rounded",
+					preview = { layout = "vertical", vertical = "up:60%" },
+				},
 			})
 
 			fzflua.register_ui_select()
@@ -280,6 +283,23 @@ require("lazy").setup({
 			vim.keymap.set("", "<leader>f/", fzflua.lgrep_curbuf)
 			vim.keymap.set("", "gra", fzflua.lsp_code_actions)
 			vim.keymap.set("", "<leader>la", fzflua.lsp_code_actions)
+
+			vim.keymap.set("n", "<leader>ld",
+				function() require("fzf-lua").lsp_document_diagnostics() end,
+				{ desc = "Workspace diagnostics (fzf-lua)" }
+			)
+			vim.keymap.set("n", "<leader>lD",
+				function() require("fzf-lua").lsp_workspace_diagnostics() end,
+				{ desc = "Workspace diagnostics (fzf-lua)" }
+			)
+			vim.keymap.set("n", "<leader>lr",
+				function() require("fzf-lua").lsp_references() end,
+				{ desc = "LSP references (fzf-lua)" }
+			)
+			vim.keymap.set("n", "<leader>li",
+				function() require("fzf-lua").lsp_implementations() end,
+				{ desc = "LSP implementations (fzf-lua)" }
+			)
 		end,
 	},
 
