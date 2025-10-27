@@ -41,7 +41,7 @@ vim.opt.smartcase = true
 -- Misc
 vim.opt.vb = true
 vim.opt.diffopt:append({ "iwhite", "algorithm:histogram", "indent-heuristic" })
-vim.opt.colorcolumn = "80"
+-- vim.opt.colorcolumn = "80"
 vim.opt.listchars = "tab:^ ,nbsp:¬,extends:»,precedes:«,trail:•"
 
 vim.api.nvim_create_autocmd("Filetype", { pattern = "rust", command = "set colorcolumn=100" })
@@ -145,6 +145,44 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 	callback = function() vim.bo.filetype = "markdown" end,
 })
 
+if vim.g.neovide then
+	vim.g.gui_font_default_size = 12
+	vim.g.gui_font_size = vim.g.gui_font_default_size
+	vim.g.gui_font_face = "JetBrainsMonoNL NFM Light"
+
+	RefreshGuiFont = function()
+		vim.opt.guifont = string.format("%s:h%s", vim.g.gui_font_face, vim.g.gui_font_size)
+	end
+
+	ResizeGuiFont = function(delta)
+		vim.g.gui_font_size = vim.g.gui_font_size + delta
+		RefreshGuiFont()
+	end
+
+	ResetGuiFont = function()
+		vim.g.gui_font_size = vim.g.gui_font_default_size
+		RefreshGuiFont()
+	end
+
+	-- Call function on startup to set default value
+	ResetGuiFont()
+
+	-- Keymaps
+
+	-- local opts = { noremap = true, silent = true }
+
+	vim.g.neovide_opacity = 0.99
+	vim.g.neovide_cursor_vfx_mode = 'pixiedust'
+	vim.g.neovide_normal_opacity = 0.99
+	vim.g.neovide_scroll_animation_length = 0.25
+
+	vim.keymap.set('', '<D-=>', function() ResizeGuiFont(1) end,
+		{ desc = 'Zoom in Neovide', noremap = true, silent = true })
+	vim.keymap.set('', '<D-->', function() ResizeGuiFont(-1) end,
+		{ desc = 'Zoom out Neovide', noremap = true, silent = true })
+	vim.keymap.set('', '<D-0>', function() ResetGuiFont() end,
+		{ desc = 'Reset Neovide zoom', noremap = true, silent = true })
+end
 
 -------------------------------------------------------------------------------
 -- Plugin Setup (lazy.nvim)
@@ -156,7 +194,6 @@ if not vim.loop.fs_stat(lazypath) then
 		lazypath })
 end
 vim.opt.rtp:prepend(lazypath)
-
 
 require("lazy").setup({
 	{
@@ -290,10 +327,10 @@ require("lazy").setup({
 				settings = {
 					gopls = {
 						gofumpt = true,
-						staticcheck = true,
+						-- staticcheck = true,
 						analyses = {
 							unusedparams = true,
-							shadow = true,
+							-- shadow = true,
 						},
 					},
 				},
@@ -441,4 +478,34 @@ require("lazy").setup({
 			vim.g.vim_markdown_auto_insert_bullets = 0
 		end,
 	},
+	{
+		'dmtrKovalenko/fff.nvim',
+		build = function()
+			-- this will download prebuild binary or try to use existing rustup toolchain to build from source
+			-- (if you are using lazy you can use gb for rebuilding a plugin if needed)
+			require("fff.download").download_or_build_binary()
+		end,
+		-- if you are using nixos
+		-- build = "nix run .#release",
+		opts = {        -- (optional)
+			debug = {
+				enabled = true, -- we expect your collaboration at least during the beta
+				show_scores = true, -- to help us optimize the scoring system, feel free to share your scores!
+			},
+		},
+		-- No need to lazy-load with lazy.nvim.
+		-- This plugin initializes itself lazily.
+		lazy = false,
+		keys = {
+			{
+				"ff", -- try it if you didn't it is a banger keybinding for a picker
+				function() require('fff').find_files() end,
+				desc = 'FFFind files',
+			}
+		}
+	},
+	{
+		'xiyaowong/transparent.nvim',
+		lazy = false,
+	}
 })
