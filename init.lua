@@ -22,6 +22,7 @@ vim.opt.number = true
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.opt.undofile = true
+vim.opt.swapfile = false
 
 -- Wildmenu and ignore patterns
 vim.opt.wildmode = "list:longest"
@@ -546,4 +547,13 @@ require("lazy").setup({
 	-- 	dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
 	-- 	opts = {},
 	-- }
+	{
+		'stevearc/oil.nvim',
+		---@module 'oil'
+		---@type oil.SetupOpts
+		opts = {},
+		-- dependencies = { { "nvim-mini/mini.icons", opts = {} } },
+		dependencies = { "nvim-tree/nvim-web-devicons" },
+		lazy = false,                               -- No lazy plz for this
+	}
 })
