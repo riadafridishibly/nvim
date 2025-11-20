@@ -44,6 +44,7 @@ vim.opt.vb = true
 vim.opt.diffopt:append({ "iwhite", "algorithm:histogram", "indent-heuristic" })
 -- vim.opt.colorcolumn = "80"
 vim.opt.listchars = "tab:^ ,nbsp:¬,extends:»,precedes:«,trail:•"
+-- vim.opt.list = true
 
 vim.api.nvim_create_autocmd("Filetype", { pattern = "rust", command = "set colorcolumn=100" })
 
@@ -196,6 +197,31 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+
+
+vim.opt.guicursor = {
+	"n-v-c:block", -- Normal/visual/command mode: block
+	"i-ci:ver25", -- Insert and command-insert: vertical bar
+	"r-cr:hor20", -- Replace modes: underline
+	"o:hor50",  -- Operator-pending: thick underline
+	"c:ver20",
+	-- "a:blinkon0",         -- Disable blinking
+}
+
+vim.api.nvim_create_autocmd("ExitPre", {
+	group = vim.api.nvim_create_augroup("Exit", { clear = true }),
+	command = "set guicursor=a:ver90",
+	desc = "Set cursor back to beam when leaving Neovim."
+})
+
+
+-- Command to trim trailing spaces
+vim.api.nvim_create_user_command("TrimTrailingSpaces", function()
+	local pos = vim.api.nvim_win_get_cursor(0)
+	vim.cmd([[%s/\s\+$//e]])
+	vim.api.nvim_win_set_cursor(0, pos)
+end, { desc = "Remove trailing spaces from the buffer" })
+
 require("lazy").setup({
 	{
 		"folke/snacks.nvim",
@@ -220,11 +246,36 @@ require("lazy").setup({
 		end
 	},
 	-- Indentation guides
+	-- {
+	-- 	"lukas-reineke/indent-blankline.nvim",
+	-- 	config = function()
+	-- 		require("ibl").setup({ indent = { char = "▏" } })
+	-- 	end,
+	-- },
 	{
-		"lukas-reineke/indent-blankline.nvim",
-		config = function()
-			require("ibl").setup({ indent = { char = "▏" } })
-		end,
+		'saghen/blink.indent',
+		--- @module 'blink.indent'
+		--- @type blink.indent.Config
+		opts = {
+			static = {
+				enabled = true,
+				char = '▏',
+				whitespace_char = nil, -- inherits from `vim.opt.listchars:get().space` when `nil` (see `:h listchars`)
+				priority = 1,
+				highlights = { 'BlinkIndent' },
+			},
+			scope = {
+				enabled = true,
+				char = '▏',
+				priority = 1000,
+				highlights = { 'BlinkIndentOrange', 'BlinkIndentViolet', 'BlinkIndentBlue' },
+				-- enable to show underlines on the line above the current scope
+				underline = {
+					enabled = false,
+					highlights = { 'BlinkIndentOrangeUnderline', 'BlinkIndentVioletUnderline', 'BlinkIndentBlueUnderline' },
+				},
+			},
+		},
 	},
 
 	-- Smooth scrolling
@@ -554,6 +605,18 @@ require("lazy").setup({
 		opts = {},
 		-- dependencies = { { "nvim-mini/mini.icons", opts = {} } },
 		dependencies = { "nvim-tree/nvim-web-devicons" },
-		lazy = false,                               -- No lazy plz for this
+		lazy = false, -- No lazy plz for this
+	},
+	{
+		'mikesmithgh/kitty-scrollback.nvim',
+		enabled = true,
+		lazy = true,
+		cmd = { 'KittyScrollbackGenerateKittens', 'KittyScrollbackCheckHealth', 'KittyScrollbackGenerateCommandLineEditing' },
+		event = { 'User KittyScrollbackLaunch' },
+		-- version = '*', -- latest stable version, may have breaking changes if major version changed
+		-- version = '^6.0.0', -- pin major version, include fixes and features that do not have breaking changes
+		config = function()
+			require('kitty-scrollback').setup()
+		end,
 	}
 })
