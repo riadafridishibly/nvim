@@ -16,6 +16,7 @@ vim.opt.foldlevelstart = 99
 vim.opt.formatoptions = "tcrqnb"
 vim.opt.scrolloff = 2
 vim.opt.wrap = false
+vim.opt.linebreak = true
 vim.opt.signcolumn = "yes"
 vim.opt.relativenumber = true
 vim.opt.number = true
@@ -116,6 +117,24 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	callback = function() vim.hl.on_yank() end,
 })
 
+vim.api.nvim_create_user_command("Mkdir", function()
+	local file = vim.api.nvim_buf_get_name(0)
+	if file == "" then
+		print("No file name; cannot create directory.")
+		return
+	end
+
+	local dir = vim.fn.fnamemodify(file, ":p:h")
+
+	if vim.fn.isdirectory(dir) == 1 then
+		print("Directory already exists: " .. dir)
+		return
+	end
+
+	vim.fn.mkdir(dir, "p")
+	print("Created directory: " .. dir)
+end, {})
+
 -- Restore cursor position
 vim.api.nvim_create_autocmd("BufReadPost", {
 	pattern = "*",
@@ -145,6 +164,11 @@ vim.api.nvim_create_autocmd("Filetype",
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 	pattern = "*.slide",
 	callback = function() vim.bo.filetype = "markdown" end,
+})
+
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+	pattern = "Podfile",
+	callback = function() vim.bo.filetype = "ruby" end,
 })
 
 if vim.g.neovide then
@@ -246,37 +270,37 @@ require("lazy").setup({
 		end
 	},
 	-- Indentation guides
-	-- {
-	-- 	"lukas-reineke/indent-blankline.nvim",
-	-- 	config = function()
-	-- 		require("ibl").setup({ indent = { char = "▏" } })
-	-- 	end,
-	-- },
 	{
-		'saghen/blink.indent',
-		--- @module 'blink.indent'
-		--- @type blink.indent.Config
-		opts = {
-			static = {
-				enabled = true,
-				char = '▏',
-				whitespace_char = nil, -- inherits from `vim.opt.listchars:get().space` when `nil` (see `:h listchars`)
-				priority = 1,
-				highlights = { 'BlinkIndent' },
-			},
-			scope = {
-				enabled = true,
-				char = '▏',
-				priority = 1000,
-				highlights = { 'BlinkIndentOrange', 'BlinkIndentViolet', 'BlinkIndentBlue' },
-				-- enable to show underlines on the line above the current scope
-				underline = {
-					enabled = false,
-					highlights = { 'BlinkIndentOrangeUnderline', 'BlinkIndentVioletUnderline', 'BlinkIndentBlueUnderline' },
-				},
-			},
-		},
+		"lukas-reineke/indent-blankline.nvim",
+		config = function()
+			require("ibl").setup({ indent = { char = "▏" } })
+		end,
 	},
+	-- {
+	-- 	'saghen/blink.indent',
+	-- 	--- @module 'blink.indent'
+	-- 	--- @type blink.indent.Config
+	-- 	opts = {
+	-- 		static = {
+	-- 			enabled = true,
+	-- 			char = '▏',
+	-- 			whitespace_char = nil, -- inherits from `vim.opt.listchars:get().space` when `nil` (see `:h listchars`)
+	-- 			priority = 1,
+	-- 			highlights = { 'BlinkIndent' },
+	-- 		},
+	-- 		scope = {
+	-- 			enabled = true,
+	-- 			char = '▏',
+	-- 			priority = 1000,
+	-- 			highlights = { 'BlinkIndentOrange', 'BlinkIndentViolet', 'BlinkIndentBlue' },
+	-- 			-- enable to show underlines on the line above the current scope
+	-- 			underline = {
+	-- 				enabled = false,
+	-- 				highlights = { 'BlinkIndentOrangeUnderline', 'BlinkIndentVioletUnderline', 'BlinkIndentBlueUnderline' },
+	-- 			},
+	-- 		},
+	-- 	},
+	-- },
 
 	-- Smooth scrolling
 	{
@@ -312,7 +336,7 @@ require("lazy").setup({
 	},
 
 	-- Root detection
-	{ "notjedi/nvim-rooter.lua", config = function() require("nvim-rooter").setup() end },
+	-- { "notjedi/nvim-rooter.lua", config = function() require("nvim-rooter").setup() end },
 
 	-- File explorer
 	{
@@ -352,6 +376,11 @@ require("lazy").setup({
 					border = "rounded",
 					preview = { layout = "vertical", vertical = "up:60%" },
 				},
+				keymap = {
+					fzf = {
+						["ctrl-q"] = "select-all+accept",
+					}
+				}
 			})
 
 			fzflua.register_ui_select()
@@ -534,8 +563,8 @@ require("lazy").setup({
 	},
 
 	-- Language support
-	{ "hashivim/vim-terraform",  ft = "terraform" },
-	{ "evanleck/vim-svelte",     ft = "svelte" },
+	{ "hashivim/vim-terraform", ft = "terraform" },
+	{ "evanleck/vim-svelte",    ft = "svelte" },
 	"cespare/vim-toml",
 	{ "cuducos/yaml.nvim", ft = "yaml", dependencies = { "nvim-treesitter/nvim-treesitter" } },
 	{
@@ -618,5 +647,14 @@ require("lazy").setup({
 		config = function()
 			require('kitty-scrollback').setup()
 		end,
+	},
+	{
+		"folke/todo-comments.nvim",
+		dependencies = { "nvim-lua/plenary.nvim" },
+		opts = {}
+	},
+	{
+		"lewis6991/gitsigns.nvim",
+		opts = {}
 	}
 })
