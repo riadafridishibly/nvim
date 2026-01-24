@@ -157,8 +157,19 @@ for _, pat in ipairs({ "text", "mail", "gitcommit" }) do
 	vim.api.nvim_create_autocmd("Filetype",
 		{ pattern = pat, group = text, command = "setlocal spell tw=72 colorcolumn=73" })
 end
-vim.api.nvim_create_autocmd("Filetype",
-	{ pattern = { "tex", "markdown" }, group = text, command = "setlocal spell tw=80 colorcolumn=81" })
+
+vim.api.nvim_create_autocmd("Filetype", {
+	pattern = { "tex", "markdown" },
+	group = text,
+	callback = function()
+		-- Only apply to modifiable buffers, not LSP hover (which is nomodifiable)
+		if vim.bo.modifiable then
+			vim.opt_local.spell = true
+			vim.opt_local.textwidth = 80
+			vim.opt_local.colorcolumn = "81"
+		end
+	end,
+})
 
 -- Treat *.slide files as markdown
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
