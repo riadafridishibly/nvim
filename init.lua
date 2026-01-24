@@ -402,8 +402,10 @@ require("lazy").setup({
 			vim.keymap.set("", "<leader>fz", fzflua.resume, { desc = "Resume last fzf-lua" })
 			vim.keymap.set("", "gra", fzflua.lsp_code_actions, { desc = "Document codeaction" })
 			vim.keymap.set("", "<leader>la", fzflua.lsp_code_actions, { desc = "Document codeaction" })
-			vim.keymap.set("n", "<leader>ld", fzflua.lsp_document_diagnostics, { desc = "Document diagnostics (fzf-lua)" })
-			vim.keymap.set("n", "<leader>lD", fzflua.lsp_workspace_diagnostics, { desc = "Workspace diagnostics (fzf-lua)" })
+			vim.keymap.set("n", "<leader>ld", fzflua.lsp_document_diagnostics,
+				{ desc = "Document diagnostics (fzf-lua)" })
+			vim.keymap.set("n", "<leader>lD", fzflua.lsp_workspace_diagnostics,
+				{ desc = "Workspace diagnostics (fzf-lua)" })
 			vim.keymap.set("n", "<leader>lr", fzflua.lsp_references, { desc = "LSP references (fzf-lua)" })
 			vim.keymap.set("n", "grr", fzflua.lsp_references, { desc = "LSP references (fzf-lua)" })
 			vim.keymap.set("n", "<leader>li", fzflua.lsp_implementations, { desc = "LSP implementations (fzf-lua)" })
@@ -665,5 +667,23 @@ require("lazy").setup({
 	{
 		"lewis6991/gitsigns.nvim",
 		opts = {}
+	},
+	{
+		"A7Lavinraj/fyler.nvim",
+		dependencies = { "nvim-mini/mini.icons" },
+		lazy = false, -- Necessary for `default_explorer` to work properly
+		opts = {}
+	},
+	{
+		"NeogitOrg/neogit",
+		lazy = true,
+		dependencies = {
+			"nvim-lua/plenary.nvim", -- required
+			"ibhagwan/fzf-lua", -- optional
+		},
+		cmd = "Neogit",
+		keys = {
+			{ "<leader>gg", "<cmd>Neogit<cr>", desc = "Show Neogit UI" }
+		}
 	}
 })
