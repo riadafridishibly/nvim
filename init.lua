@@ -240,10 +240,10 @@ vim.opt.guicursor = {
 	"r-cr:hor20", -- Replace modes: underline
 	"o:hor50",  -- Operator-pending: thick underline
 	"c:ver20",
-	-- "a:blinkon0",         -- Disable blinking
+	-- "a:blinkon0,		-- Disable blinking
 }
 
-vim.api.nvim_create_autocmd("ExitPre", {
+vim.api.nvim_create_autocmd("VimLeave", {
 	group = vim.api.nvim_create_augroup("Exit", { clear = true }),
 	command = "set guicursor=a:ver90",
 	desc = "Set cursor back to beam when leaving Neovim."
@@ -359,7 +359,11 @@ require("lazy").setup({
 			require("neo-tree").setup({
 				close_if_last_window = true,
 				filesystem = {
-					filtered_items = { visible = true, hide_dotfiles = false, hide_gitignored = false },
+					filtered_items = {
+						visible = true,
+						hide_dotfiles = false,
+						hide_gitignored = false,
+					},
 					follow_current_file = { enabled = true },
 				},
 			})
@@ -409,6 +413,56 @@ require("lazy").setup({
 			vim.keymap.set("n", "<leader>lr", fzflua.lsp_references, { desc = "LSP references (fzf-lua)" })
 			vim.keymap.set("n", "grr", fzflua.lsp_references, { desc = "LSP references (fzf-lua)" })
 			vim.keymap.set("n", "<leader>li", fzflua.lsp_implementations, { desc = "LSP implementations (fzf-lua)" })
+
+			vim.keymap.set("n", "<leader>gm", function()
+				vim.fn.system("git rev-parse --is-inside-work-tree")
+				if vim.v.shell_error ~= 0 then
+					vim.notify("Not a git repository", vim.log.levels.WARN)
+					return
+				end
+
+				fzflua.fzf_exec(
+					"{ git diff --name-only HEAD 2>/dev/null; git ls-files --others --exclude-standard; } | sort -u",
+					{
+						prompt = "Git Modified> ",
+						preview = "git diff HEAD -- {1} 2>/dev/null",
+						actions = {
+							["default"] = function(selected)
+								if not selected or #selected == 0 then return end
+								local file = selected[1]
+								local abs_path = vim.fn.fnamemodify(file, ":p")
+
+								vim.cmd("tabnew " .. vim.fn.fnameescape(abs_path))
+								local file_win = vim.api.nvim_get_current_win()
+								vim.cmd("diffthis")
+
+								vim.fn.system("git ls-files --error-unmatch " .. vim.fn.shellescape(file))
+								if vim.v.shell_error ~= 0 then
+									-- Untracked file: diff against empty buffer
+									vim.cmd("leftabove vnew")
+									vim.bo.buftype = "nofile"
+									vim.bo.bufhidden = "wipe"
+									vim.bo.filetype = vim.filetype.match({ filename = abs_path }) or ""
+									vim.cmd("diffthis")
+								else
+									-- Tracked file: diff against HEAD
+									local git_content =
+										vim.fn.systemlist("git show HEAD:" .. vim.fn.shellescape(file))
+									vim.cmd("leftabove vnew")
+									vim.bo.buftype = "nofile"
+									vim.bo.bufhidden = "wipe"
+									vim.bo.filetype = vim.filetype.match({ filename = abs_path }) or ""
+									vim.api.nvim_buf_set_lines(0, 0, -1, false, git_content)
+									vim.bo.modifiable = false
+									vim.cmd("diffthis")
+								end
+								vim.api.nvim_set_current_win(file_win)
+							end,
+							["ctrl-e"] = fzflua.actions.file_edit,
+						},
+					}
+				)
+			end, { desc = "Git modified files (native diff)" })
 		end,
 	},
 
@@ -685,5 +739,14 @@ require("lazy").setup({
 		keys = {
 			{ "<leader>gg", "<cmd>Neogit<cr>", desc = "Show Neogit UI" }
 		}
-	}
+	},
+	-- {
+	-- 	'MeanderingProgrammer/render-markdown.nvim',
+	-- 	dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.nvim' }, -- if you use the mini.nvim suite
+	-- 	-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.icons' },        -- if you use standalone mini plugins
+	-- 	-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you prefer nvim-web-devicons
+	-- 	---@module 'render-markdown'
+	-- 	---@type render.md.UserConfig
+	-- 	opts = {},
+	-- }
 })
