@@ -1,6 +1,8 @@
 -- Neovim configuration (inspired by jonhoo’s setup)
 -- https://github.com/jonhoo/configs/blob/master/editor/.config/nvim/init.lua
 
+local theme = os.getenv("NVIM_THEME") or "gruvbox"
+
 -- Set <Space> as leader key
 vim.keymap.set("n", "<Space>", "<Nop>", { silent = true })
 vim.g.mapleader = " "
@@ -18,8 +20,8 @@ vim.opt.scrolloff = 2
 vim.opt.wrap = false
 vim.opt.linebreak = true
 vim.opt.signcolumn = "yes"
-vim.opt.relativenumber = true
-vim.opt.number = true
+vim.opt.relativenumber = false
+vim.opt.number = false
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.opt.undofile = true
@@ -28,7 +30,7 @@ vim.opt.swapfile = false
 -- Wildmenu and ignore patterns
 vim.opt.wildmode = "list:longest"
 vim.opt.wildignore = ".hg,.svn,*~,*.png,*.jpg,*.gif,*.min.js,*.swp,*.o,vendor,dist,_site"
-vim.o.winborder = 'rounded'
+-- vim.o.winborder = 'rounded'
 
 -- Tabs and indentation
 vim.opt.shiftwidth = 4
@@ -165,8 +167,9 @@ vim.api.nvim_create_autocmd("Filetype", {
 		-- Only apply to modifiable buffers, not LSP hover (which is nomodifiable)
 		if vim.bo.modifiable then
 			vim.opt_local.spell = true
-			vim.opt_local.textwidth = 80
-			vim.opt_local.colorcolumn = "81"
+			vim.opt_local.wrap = true
+			-- vim.opt_local.textwidth = 80
+			-- vim.opt_local.colorcolumn = "81"
 		end
 	end,
 })
@@ -271,6 +274,7 @@ require("lazy").setup({
 
 	{
 		'sainnhe/gruvbox-material',
+		enabled = theme == "gruvbox",
 		lazy = false,
 		priority = 1000,
 		config = function()
@@ -278,6 +282,30 @@ require("lazy").setup({
 			-- directly inside the plugin declaration.
 			vim.g.gruvbox_material_enable_italic = true
 			vim.cmd.colorscheme('gruvbox-material')
+
+
+			-- Float windows: match Gruvbox background layers
+			vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
+			vim.api.nvim_set_hl(0, "FloatBorder", { fg = "#928374", bg = "none" }) -- gruvbox gray
+
+			-- Neo-tree highlight improvements (Gruvbox style)
+
+			-- Selected line: use bg2 for a subtle but clear highlight
+			vim.api.nvim_set_hl(0, "NeoTreeCursorLine", {
+				bg = "#504945", -- gruvbox bg2
+				bold = true,
+			})
+
+			-- Opened file: use Gruvbox blue accent
+			vim.api.nvim_set_hl(0, "NeoTreeFileNameOpened", {
+				fg = "#83a598", -- gruvbox blue
+				bold = true,
+			})
+
+			-- Directory names: neutral gray that fits the theme
+			vim.api.nvim_set_hl(0, "NeoTreeDirectoryName", {
+				fg = "#a89984", -- gruvbox fg2/gray
+			})
 		end
 	},
 	-- Indentation guides
@@ -743,6 +771,9 @@ require("lazy").setup({
 			{ "<leader>gg", "<cmd>Neogit<cr>", desc = "Show Neogit UI" }
 		}
 	},
+	{
+		"tpope/vim-fugitive",
+	},
 	-- {
 	-- 	'MeanderingProgrammer/render-markdown.nvim',
 	-- 	dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.nvim' }, -- if you use the mini.nvim suite
@@ -753,3 +784,19 @@ require("lazy").setup({
 	-- 	opts = {},
 	-- }
 })
+
+-- Load Milk Tea colorscheme
+if theme == "milk-tea" then
+	vim.cmd.colorscheme('milk-tea')
+
+	vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal", })
+	vim.api.nvim_set_hl(0, "FloatBorder", { fg = "#839496", bg = "none" })
+
+	-- Neo-tree highlight improvements
+	-- Make the selected file more visible with a distinct background (milk tea theme)
+	vim.api.nvim_set_hl(0, "NeoTreeCursorLine", { bg = "#d8c7b5", bold = true, })
+	-- Make file names on the selected line stand out
+	vim.api.nvim_set_hl(0, "NeoTreeFileNameOpened", { fg = "#2e9ce6", bold = true, })
+	-- Make directory names slightly dimmed
+	vim.api.nvim_set_hl(0, "NeoTreeDirectoryName", { fg = "#657b83", })
+end
