@@ -30,7 +30,8 @@ vim.opt.swapfile = false
 -- Wildmenu and ignore patterns
 vim.opt.wildmode = "list:longest"
 vim.opt.wildignore = ".hg,.svn,*~,*.png,*.jpg,*.gif,*.min.js,*.swp,*.o,vendor,dist,_site"
--- vim.o.winborder = 'rounded'
+vim.o.winborder = 'rounded'
+vim.o.cmdheight = 0
 
 -- Tabs and indentation
 vim.opt.shiftwidth = 4
@@ -624,9 +625,15 @@ require("lazy").setup({
 
 			-- (Default) Only show the documentation popup when manually triggered
 			completion = {
+				menu = {
+					border = "none",
+				},
 				documentation = {
 					auto_show = true,
 					auto_show_delay_ms = 400,
+					window = {
+						border = "rounded",
+					},
 				},
 				ghost_text = {
 					enabled = true
@@ -774,29 +781,24 @@ require("lazy").setup({
 	{
 		"tpope/vim-fugitive",
 	},
-	-- {
-	-- 	'MeanderingProgrammer/render-markdown.nvim',
-	-- 	dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.nvim' }, -- if you use the mini.nvim suite
-	-- 	-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.icons' },        -- if you use standalone mini plugins
-	-- 	-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you prefer nvim-web-devicons
-	-- 	---@module 'render-markdown'
-	-- 	---@type render.md.UserConfig
-	-- 	opts = {},
-	-- }
 })
 
 -- Load Milk Tea colorscheme
 if theme == "milk-tea" then
 	vim.cmd.colorscheme('milk-tea')
 
-	vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal", })
-	vim.api.nvim_set_hl(0, "FloatBorder", { fg = "#839496", bg = "none" })
+	-- vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal", })
+	-- vim.api.nvim_set_hl(0, "FloatBorder", { fg = "#839496", bg = "none" })
+	--
+	-- -- Neo-tree highlight improvements
+	-- -- Make the selected file more visible with a distinct background (milk tea theme)
+	-- vim.api.nvim_set_hl(0, "NeoTreeCursorLine", { bg = "#d8c7b5", bold = true, })
+	-- -- Make file names on the selected line stand out
+	-- vim.api.nvim_set_hl(0, "NeoTreeFileNameOpened", { fg = "#2e9ce6", bold = true, })
+	-- -- Make directory names slightly dimmed
+	-- vim.api.nvim_set_hl(0, "NeoTreeDirectoryName", { fg = "#657b83", })
+end
 
-	-- Neo-tree highlight improvements
-	-- Make the selected file more visible with a distinct background (milk tea theme)
-	vim.api.nvim_set_hl(0, "NeoTreeCursorLine", { bg = "#d8c7b5", bold = true, })
-	-- Make file names on the selected line stand out
-	vim.api.nvim_set_hl(0, "NeoTreeFileNameOpened", { fg = "#2e9ce6", bold = true, })
-	-- Make directory names slightly dimmed
-	vim.api.nvim_set_hl(0, "NeoTreeDirectoryName", { fg = "#657b83", })
+if theme == "rexim" then
+	vim.cmd.colorscheme("gruver-darker")
 end

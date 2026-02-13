@@ -5,6 +5,7 @@
   "fyler.nvim": { "branch": "main", "commit": "e8d7391140ecaa76c5ef84d35e385f149cb63ade" },
   "fzf-lua": { "branch": "main", "commit": "fb8c50ba62a0daa433b7ac2b78834f318322b879" },
   "gitsigns.nvim": { "branch": "main", "commit": "31217271a7314c343606acb4072a94a039a19fb5" },
+  "gruber-darker.nvim": { "branch": "main", "commit": "aba065c3a79b58cc3863d5c9db319255abd1258a" },
   "gruvbox-material": { "branch": "master", "commit": "790afe9dd085aa04eccd1da3626c5fa05c620e53" },
   "indent-blankline.nvim": { "branch": "master", "commit": "005b56001b2cb30bfa61b7986bc50657816ba4ba" },
   "kitty-scrollback.nvim": { "branch": "main", "commit": "5574df779fbe03205a08af4d9154279ff491be75" },
