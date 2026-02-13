@@ -363,6 +363,7 @@ require("lazy").setup({
 	{
 		"nvim-treesitter/nvim-treesitter",
 		build = ":TSUpdate",
+		dependencies = { "nvim-treesitter/nvim-treesitter-textobjects" },
 		config = function()
 			require("nvim-treesitter.configs").setup({
 				ensure_installed = { "lua", "vim", "vimdoc", "typescript", "javascript", "go", "c" },
@@ -375,6 +376,49 @@ require("lazy").setup({
 					end,
 				},
 			})
+
+			local ts_select = require("nvim-treesitter-textobjects.select")
+			local ts_move = require("nvim-treesitter-textobjects.move")
+			local ts_swap = require("nvim-treesitter-textobjects.swap")
+			require("nvim-treesitter-textobjects").setup({ select = { lookahead = true } })
+
+			-- Text object selections
+			local select_maps = {
+				["af"] = "@function.outer",
+				["if"] = "@function.inner",
+				["ac"] = "@class.outer",
+				["ic"] = "@class.inner",
+				["aa"] = "@parameter.outer",
+				["ia"] = "@parameter.inner",
+				["ai"] = "@conditional.outer",
+				["ii"] = "@conditional.inner",
+				["al"] = "@loop.outer",
+				["il"] = "@loop.inner",
+			}
+			for key, query in pairs(select_maps) do
+				vim.keymap.set({ "x", "o" }, key, function() ts_select.select_textobject(query) end)
+			end
+
+			-- Move to next/previous
+			local move_maps = {
+				["]f"] = { ts_move.goto_next_start, "@function.outer" },
+				["]c"] = { ts_move.goto_next_start, "@class.outer" },
+				["]a"] = { ts_move.goto_next_start, "@parameter.inner" },
+				["]F"] = { ts_move.goto_next_end, "@function.outer" },
+				["]C"] = { ts_move.goto_next_end, "@class.outer" },
+				["[f"] = { ts_move.goto_previous_start, "@function.outer" },
+				["[c"] = { ts_move.goto_previous_start, "@class.outer" },
+				["[a"] = { ts_move.goto_previous_start, "@parameter.inner" },
+				["[F"] = { ts_move.goto_previous_end, "@function.outer" },
+				["[C"] = { ts_move.goto_previous_end, "@class.outer" },
+			}
+			for key, val in pairs(move_maps) do
+				vim.keymap.set({ "n", "x", "o" }, key, function() val[1](val[2]) end)
+			end
+
+			-- Swap parameters
+			-- vim.keymap.set("n", "<leader>a", function() ts_swap.swap_next("@parameter.inner") end)
+			-- vim.keymap.set("n", "<leader>A", function() ts_swap.swap_previous("@parameter.inner") end)
 		end,
 	},
 
