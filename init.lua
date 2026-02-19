@@ -31,7 +31,7 @@ vim.opt.swapfile = false
 vim.opt.wildmode = "list:longest"
 vim.opt.wildignore = ".hg,.svn,*~,*.png,*.jpg,*.gif,*.min.js,*.swp,*.o,vendor,dist,_site"
 vim.o.winborder = 'rounded'
-vim.o.cmdheight = 0
+vim.o.cmdheight = 1
 
 -- Tabs and indentation
 vim.opt.shiftwidth = 4
@@ -842,22 +842,57 @@ require("lazy").setup({
 	{
 		"tpope/vim-fugitive",
 	},
+	{
+		"filipjanevski/0x96f.nvim",
+		priority = 1000,
+		enabled = theme == '0x96f',
+		config = function()
+			require("0x96f").setup()
+			vim.cmd.colorscheme("0x96f")
+		end,
+	},
+	{
+		"navarasu/onedark.nvim",
+		enabled = theme == 'onedark',
+		priority = 1000,
+		config = function()
+			require('onedark').setup {
+				-- style = 'darker'
+			}
+			require('onedark').load()
+		end
+	},
+	{
+		'nvim-mini/mini.base16',
+		enabled = theme == 'minicyan',
+		version = false,
+		config = function()
+			-- require('mini.base16').setup({})
+			vim.cmd("colorscheme minicyan")
+			-- Make signcolumn background same as main background
+			vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
+			-- Diagnostic signs
+			vim.api.nvim_set_hl(0, "DiagnosticSignError", { bg = "none" })
+			vim.api.nvim_set_hl(0, "DiagnosticSignWarn", { bg = "none" })
+			vim.api.nvim_set_hl(0, "DiagnosticSignInfo", { bg = "none" })
+			vim.api.nvim_set_hl(0, "DiagnosticSignHint", { bg = "none" })
+			-- Git signs
+			vim.api.nvim_set_hl(0, "GitSignsAdd", { bg = "none" })
+			vim.api.nvim_set_hl(0, "GitSignsChange", { bg = "none" })
+			vim.api.nvim_set_hl(0, "GitSignsDelete", { bg = "none" })
+			vim.api.nvim_set_hl(0, "GitSignsAddNr", { bg = "none" })
+			vim.api.nvim_set_hl(0, "GitSignsChangeNr", { bg = "none" })
+			vim.api.nvim_set_hl(0, "GitSignsDeleteNr", { bg = "none" })
+			vim.api.nvim_set_hl(0, "GitSignsAddLn", { bg = "none" })
+			vim.api.nvim_set_hl(0, "GitSignsChangeLn", { bg = "none" })
+			vim.api.nvim_set_hl(0, "GitSignsDeleteLn", { bg = "none" })
+		end
+	},
 })
 
 -- Load Milk Tea colorscheme
 if theme == "milk-tea" then
 	vim.cmd.colorscheme('milk-tea')
-
-	-- vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal", })
-	-- vim.api.nvim_set_hl(0, "FloatBorder", { fg = "#839496", bg = "none" })
-	--
-	-- -- Neo-tree highlight improvements
-	-- -- Make the selected file more visible with a distinct background (milk tea theme)
-	-- vim.api.nvim_set_hl(0, "NeoTreeCursorLine", { bg = "#d8c7b5", bold = true, })
-	-- -- Make file names on the selected line stand out
-	-- vim.api.nvim_set_hl(0, "NeoTreeFileNameOpened", { fg = "#2e9ce6", bold = true, })
-	-- -- Make directory names slightly dimmed
-	-- vim.api.nvim_set_hl(0, "NeoTreeDirectoryName", { fg = "#657b83", })
 end
 
 if theme == "rexim" then
