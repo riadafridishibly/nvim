@@ -1,7 +1,7 @@
 -- Neovim configuration (inspired by jonhoo’s setup)
 -- https://github.com/jonhoo/configs/blob/master/editor/.config/nvim/init.lua
 
-local theme = os.getenv("NVIM_THEME") or "gruvbox"
+local theme = os.getenv("NVIM_THEME") or "minicyan"
 
 -- Set <Space> as leader key
 vim.keymap.set("n", "<Space>", "<Nop>", { silent = true })
@@ -21,7 +21,7 @@ vim.opt.wrap = false
 vim.opt.linebreak = true
 vim.opt.signcolumn = "yes"
 vim.opt.relativenumber = false
-vim.opt.number = false
+vim.opt.number = true
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.opt.undofile = true
@@ -156,7 +156,8 @@ vim.api.nvim_create_autocmd("InsertLeave", { pattern = "*", command = "set nopas
 
 -- Shorter text widths for prose
 local text = vim.api.nvim_create_augroup("text", { clear = true })
-for _, pat in ipairs({ "text", "mail", "gitcommit" }) do
+-- "text", "mail", 
+for _, pat in ipairs({ "gitcommit" }) do
 	vim.api.nvim_create_autocmd("Filetype",
 		{ pattern = pat, group = text, command = "setlocal spell tw=72 colorcolumn=73" })
 end
@@ -281,7 +282,8 @@ require("lazy").setup({
 		config = function()
 			-- Optionally configure and load the colorscheme
 			-- directly inside the plugin declaration.
-			vim.g.gruvbox_material_enable_italic = true
+			vim.g.gruvbox_material_enable_italic = false
+			vim.g.gruvbox_material_disable_italic_comment = 1
 			vim.cmd.colorscheme('gruvbox-material')
 
 
