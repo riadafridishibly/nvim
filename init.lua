@@ -156,7 +156,7 @@ vim.api.nvim_create_autocmd("InsertLeave", { pattern = "*", command = "set nopas
 
 -- Shorter text widths for prose
 local text = vim.api.nvim_create_augroup("text", { clear = true })
--- "text", "mail", 
+-- "text", "mail",
 for _, pat in ipairs({ "gitcommit" }) do
 	vim.api.nvim_create_autocmd("Filetype",
 		{ pattern = pat, group = text, command = "setlocal spell tw=72 colorcolumn=73" })
@@ -364,19 +364,19 @@ require("lazy").setup({
 	-- Treesitter
 	{
 		"nvim-treesitter/nvim-treesitter",
+		branch = "main",
 		build = ":TSUpdate",
-		dependencies = { "nvim-treesitter/nvim-treesitter-textobjects" },
+		dependencies = { { "nvim-treesitter/nvim-treesitter-textobjects", branch = "main" } },
 		config = function()
-			require("nvim-treesitter.configs").setup({
-				ensure_installed = { "lua", "vim", "vimdoc", "typescript", "javascript", "go", "c" },
-				highlight = {
-					enable = true,
-					disable = function(_, buf)
-						local max = 100 * 1024
-						local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
-						return ok and stats and stats.size > max
-					end,
-				},
+			require("nvim-treesitter").install({
+				"lua", "vim", "vimdoc", "typescript", "javascript", "go", "c",
+				"markdown", "markdown_inline",
+			})
+
+			vim.api.nvim_create_autocmd("FileType", {
+				callback = function(args)
+					pcall(vim.treesitter.start, args.buf)
+				end,
 			})
 
 			local ts_select = require("nvim-treesitter-textobjects.select")
@@ -835,6 +835,8 @@ require("lazy").setup({
 		dependencies = {
 			"nvim-lua/plenary.nvim", -- required
 			"ibhagwan/fzf-lua", -- optional
+			"m00qek/baleia.nvim", -- optional
+			"esmuellert/codediff.nvim", -- optional
 		},
 		cmd = "Neogit",
 		keys = {
