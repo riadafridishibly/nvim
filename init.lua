@@ -188,9 +188,9 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 })
 
 if vim.g.neovide then
-	vim.g.gui_font_default_size = 12
+	vim.g.gui_font_default_size = 16
 	vim.g.gui_font_size = vim.g.gui_font_default_size
-	vim.g.gui_font_face = "JetBrainsMonoNL NFM Light"
+	vim.g.gui_font_face = "Maple Mono"
 
 	RefreshGuiFont = function()
 		vim.opt.guifont = string.format("%s:h%s", vim.g.gui_font_face, vim.g.gui_font_size)
@@ -213,10 +213,11 @@ if vim.g.neovide then
 
 	-- local opts = { noremap = true, silent = true }
 
-	vim.g.neovide_opacity = 0.99
+	vim.g.neovide_opacity = 0.95
 	vim.g.neovide_cursor_vfx_mode = 'pixiedust'
-	vim.g.neovide_normal_opacity = 0.99
-	vim.g.neovide_scroll_animation_length = 0.25
+	vim.g.neovide_normal_opacity = 0.95
+	vim.g.neovide_scroll_animation_length = 0.50
+	vim.g.neovide_window_blurred = true
 
 	vim.keymap.set('', '<D-=>', function() ResizeGuiFont(1) end,
 		{ desc = 'Zoom in Neovide', noremap = true, silent = true })
@@ -284,6 +285,7 @@ require("lazy").setup({
 			-- directly inside the plugin declaration.
 			vim.g.gruvbox_material_enable_italic = false
 			vim.g.gruvbox_material_disable_italic_comment = 1
+			vim.opt.background = 'dark'
 			vim.cmd.colorscheme('gruvbox-material')
 
 
@@ -591,6 +593,17 @@ require("lazy").setup({
 			}
 
 			vim.lsp.enable('luals')
+
+			vim.lsp.config("rust_analyzer", {
+				settings = {
+					["rust-analyzer"] = {
+						check = {
+							command = "clippy",
+						},
+					},
+				},
+			})
+			vim.lsp.enable("rust_analyzer")
 
 			vim.keymap.set("n", "<leader>D", function()
 				vim.diagnostic.open_float({ border = "rounded", source = true, severity_sort = true })
