@@ -510,7 +510,9 @@ require("lazy").setup({
 				-- Nested: setup() reads opts[2] as load_profiles' `silent` arg,
 				-- so a flat { "ivy", "hide" } would silently drop "hide".
 				{ "ivy", "hide" },
-				defaults = { formatter = "path.filename_first" },
+				-- `dirname_first` keeps the filename at the end of the path,
+				-- dimming the parent dir via FzfLuaDirPart.
+				defaults = { formatter = "path.dirname_first" },
 				fzf_colors = {
 					true, -- inherit the rest from the colorscheme
 					["hl"] = match_hl,
@@ -537,6 +539,29 @@ require("lazy").setup({
 					}
 				}
 			})
+
+			-- The preview window already sets `cursorline` window-locally, but
+			-- FzfLuaCursorLine links to CursorLine, which several themes draw only a
+			-- shade off Normal (gruvbox-material: #32302f on #282828). Anchor it to
+			-- Visual so the matched line is legible. fzf-lua registers its own groups
+			-- with `default = true`, so these win; a colorscheme switch clears them.
+			local function fzf_preview_hls()
+				local function hl(name) return vim.api.nvim_get_hl(0, { name = name, link = false }) end
+				local visual, incsearch = hl("Visual"), hl("IncSearch")
+				if visual.bg then
+					vim.api.nvim_set_hl(0, "FzfLuaCursorLine", { bg = visual.bg })
+				end
+				local nr = incsearch.bg or incsearch.fg
+				if nr then
+					vim.api.nvim_set_hl(0, "FzfLuaCursorLineNr", { fg = nr, bold = true })
+				end
+			end
+
+			vim.api.nvim_create_autocmd("ColorScheme", {
+				group = vim.api.nvim_create_augroup("fzf-lua-preview-hls", { clear = true }),
+				callback = fzf_preview_hls,
+			})
+			fzf_preview_hls()
 
 			fzflua.register_ui_select()
 
