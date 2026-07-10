@@ -496,8 +496,26 @@ require("lazy").setup({
 		dependencies = { "nvim-tree/nvim-web-devicons" },
 		config = function()
 			local fzflua = require("fzf-lua")
+
+			-- Per-picker query history on ctrl-p/ctrl-n, keyed by `__resume_key`.
+			vim.g.fzf_history_dir = vim.fn.stdpath("data") .. "/fzf-history"
+
+			-- Matched chars, used for both fzf's `hl`/`hl+`. `reverse` turns the
+			-- color into the match's background; without an explicit color fzf-lua
+			-- passes `-1` (keep token fg), which inverts dim tokens into dim blocks.
+			-- First highlight group that exists in the active colorscheme wins.
+			local match_hl = { "bg", { "IncSearch", "Search", "Visual" }, "reverse", "bold" }
+
 			fzflua.setup({
-				"ivy",
+				-- Nested: setup() reads opts[2] as load_profiles' `silent` arg,
+				-- so a flat { "ivy", "hide" } would silently drop "hide".
+				{ "ivy", "hide" },
+				defaults = { formatter = "path.filename_first" },
+				fzf_colors = {
+					true, -- inherit the rest from the colorscheme
+					["hl"] = match_hl,
+					["hl+"] = match_hl,
+				},
 				codeaction = {
 					diff_opts = { ctxlen = 3 },
 				},
@@ -505,11 +523,16 @@ require("lazy").setup({
 					diff_opts = { ctxlen = 3 },
 				},
 				winopts = {
-					border = "rounded",
-					preview = { layout = "vertical", vertical = "up:60%" },
+					-- Treesitter-enabled pickers force-override `fzf_colors.hl`,
+					-- so the match color has to be re-stated here to survive.
+					treesitter = {
+						fzf_colors = { ["hl"] = match_hl, ["hl+"] = match_hl },
+					},
 				},
 				keymap = {
+					-- `true` inherits the default binds; without it they are all dropped.
 					fzf = {
+						true,
 						["ctrl-q"] = "select-all+accept",
 					}
 				}
