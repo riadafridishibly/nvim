@@ -536,6 +536,13 @@ require("lazy").setup({
 					fzf = {
 						true,
 						["ctrl-q"] = "select-all+accept",
+						-- Setting `--history` makes fzf silently remap ctrl-n/ctrl-p to
+						-- next/prev-history (see `man fzf`, --history). Put selection back
+						-- where it belongs and move history onto ctrl-j/ctrl-k.
+						["ctrl-n"] = "down",
+						["ctrl-p"] = "up",
+						["ctrl-j"] = "next-history",
+						["ctrl-k"] = "prev-history",
 					}
 				}
 			})
