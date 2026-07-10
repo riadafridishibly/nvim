@@ -45,7 +45,17 @@ vim.opt.smartcase = true
 
 -- Misc
 vim.opt.vb = true
-vim.opt.diffopt:append({ "iwhite", "algorithm:histogram", "indent-heuristic" })
+-- vim.opt.diffopt:append({ "iwhite", "algorithm:histogram", "indent-heuristic" })
+vim.opt.diffopt = {
+	"internal",
+	"filler",
+	"closeoff",
+	"indent-heuristic",
+	"inline:char",
+	"linematch:40",
+	"algorithm:histogram",
+	"vertical", -- 👈 ensures side-by-side
+}
 -- vim.opt.colorcolumn = "80"
 vim.opt.listchars = "tab:^ ,nbsp:¬,extends:»,precedes:«,trail:•"
 -- vim.opt.list = true
@@ -69,6 +79,8 @@ vim.keymap.set("n", "<C-h>", "<C-w><C-h>", { desc = "Move left window" })
 vim.keymap.set("n", "<C-l>", "<C-w><C-l>", { desc = "Move right window" })
 vim.keymap.set("n", "<C-j>", "<C-w><C-j>", { desc = "Move down window" })
 vim.keymap.set("n", "<C-k>", "<C-w><C-k>", { desc = "Move up window" })
+vim.keymap.set("n", "<C-w>z", function() require("snacks").zen.zoom() end,
+	{ desc = "Toggle zoom current window" })
 
 -- Search and regex
 vim.keymap.set("n", "n", "nzz", { silent = true })
@@ -117,7 +129,7 @@ vim.diagnostic.config({ virtual_text = true, virtual_lines = false })
 vim.api.nvim_create_autocmd("TextYankPost", {
 	desc = "Highlight when yanking text",
 	group = vim.api.nvim_create_augroup("highlight-yank", { clear = true }),
-	callback = function() vim.hl.on_yank() end,
+	callback = function() vim.hl.hl_op() end,
 })
 
 vim.api.nvim_create_user_command("Mkdir", function()
@@ -185,6 +197,30 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 	pattern = "Podfile",
 	callback = function() vim.bo.filetype = "ruby" end,
+})
+
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+	pattern = "*.env.example",
+	callback = function() vim.bo.filetype = "env" end,
+})
+
+-- Neogit swaps the commit view out for a `neogit://` scratch buffer in place, so the
+-- window's jumplist still points at the log view and <C-o> lands there. Neogit's own `q`
+-- mapping restores the diff at the line we left, so route <C-o> to it.
+vim.api.nvim_create_autocmd("BufEnter", {
+	group = vim.api.nvim_create_augroup("neogit-commit-view-jump-back", { clear = true }),
+	callback = function(args)
+		if not vim.startswith(vim.api.nvim_buf_get_name(args.buf), "neogit://") then return end
+
+		local q = vim.fn.maparg("q", "n", false, true)
+		if q.buffer ~= 1 or not q.callback then return end
+
+		vim.keymap.set("n", "<C-o>", q.callback, {
+			buffer = args.buf,
+			nowait = true,
+			desc = "Neogit: back to commit diff",
+		})
+	end,
 })
 
 if vim.g.neovide then
@@ -432,7 +468,8 @@ require("lazy").setup({
 	-- File explorer
 	{
 		"nvim-neo-tree/neo-tree.nvim",
-		branch = "v3.x",
+		-- branch = "v3.x",
+		branch = "main",
 		dependencies = { "nvim-lua/plenary.nvim", "MunifTanjim/nui.nvim", "nvim-tree/nvim-web-devicons" },
 		lazy = false,
 		config = function()
@@ -480,6 +517,7 @@ require("lazy").setup({
 
 			fzflua.register_ui_select()
 
+			vim.keymap.set("", "<leader>ff", fzflua.files)
 			vim.keymap.set("", "<leader>fw", fzflua.grep_project)
 			vim.keymap.set("", "<leader>fb", fzflua.buffers)
 			vim.keymap.set("", "<leader>f/", fzflua.lgrep_curbuf)
@@ -492,7 +530,7 @@ require("lazy").setup({
 				{ desc = "Workspace diagnostics (fzf-lua)" })
 			vim.keymap.set("n", "<leader>lr", fzflua.lsp_references, { desc = "LSP references (fzf-lua)" })
 			vim.keymap.set("n", "grr", fzflua.lsp_references, { desc = "LSP references (fzf-lua)" })
-			vim.keymap.set("n", "<leader>li", fzflua.lsp_implementations, { desc = "LSP implementations (fzf-lua)" })
+			vim.keymap.set("n", "gI", fzflua.lsp_implementations, { desc = "LSP implementations (fzf-lua)" })
 
 			vim.keymap.set("n", "<leader>gm", function()
 				vim.fn.system("git rev-parse --is-inside-work-tree")
@@ -750,8 +788,43 @@ require("lazy").setup({
 		end,
 	},
 	{
+		"delphinus/md-render.nvim",
+		version = "*",
+		dependencies = {
+			{ "nvim-tree/nvim-web-devicons", version = "*" }, -- optional: file type icons in code blocks
+			{ "delphinus/budoux.lua",        version = "*" }, -- optional: CJK phrase-level line breaking
+		},
+		keys = {
+			{ "<leader>mp", "<Plug>(md-render-preview)",     desc = "Markdown preview (toggle)" },
+			{ "<leader>mt", "<Plug>(md-render-preview-tab)", desc = "Markdown preview in tab (toggle)" },
+			-- { "<leader>md", "<Plug>(md-render-demo)",        desc = "Markdown render demo" },
+		},
+	},
+	{
 		'dmtrKovalenko/fff.nvim',
 		enabled = true,
+		config = function()
+			require('fff').setup({
+				layout = {
+					height = 0.9,
+					width = 0.9,
+					prompt_position = 'bottom', -- or 'top'
+					preview_position = 'top', -- or 'left', 'right', 'top', 'bottom'
+					preview_size = 0.5,
+					flex = {     -- set to false to disable flex layout
+						size = 130, -- column threshold: if screen width >= size, use preview_position; otherwise use wrap
+						wrap = 'top', -- position to use when screen is narrower than size
+					},
+					show_scrollbar = true, -- Show scrollbar for pagination
+					-- How to shorten long directory paths in the file list:
+					-- 'middle_number' (default): uses dots for 1-3 hidden (a/./b, a/../b, a/.../b)
+					--                            and numbers for 4+ (a/.4./b, a/.5./b)
+					-- 'middle': always uses dots (a/./b, a/../b, a/.../b)
+					-- 'end': truncates from the end (home/user/projects)
+					path_shorten_strategy = 'middle_number',
+				},
+			})
+		end,
 		build = function()
 			-- this will download prebuild binary or try to use existing rustup toolchain to build from source
 			-- (if you are using lazy you can use gb for rebuilding a plugin if needed)
@@ -774,11 +847,11 @@ require("lazy").setup({
 				function() require('fff').find_files() end,
 				desc = 'FFFind files',
 			},
-			{
-				"<leader>ff", -- try it if you didn't it is a banger keybinding for a picker
-				function() require('fff').find_files() end,
-				desc = 'FFFind files',
-			},
+			-- {
+			-- 	"<leader>ff", -- try it if you didn't it is a banger keybinding for a picker
+			-- 	function() require('fff').find_files() end,
+			-- 	desc = 'FFFind files',
+			-- },
 			{
 				"<leader>fg",
 				function() require('fff').live_grep() end,
@@ -852,6 +925,34 @@ require("lazy").setup({
 			"esmuellert/codediff.nvim", -- optional
 		},
 		cmd = "Neogit",
+		opts = {
+			status = {
+				recent_commit_count = 20,
+			},
+			sections = {
+				recent = { folded = false },
+			},
+		},
+		config = function(_, opts)
+			require("neogit").setup(opts)
+
+			-- Upstream bug: translate_hunk_location() swaps the two hunk bases. A hunk header
+			-- `@@ -index_from,_ +disk_from,_ @@` puts the old file at index_from and the new at
+			-- disk_from, but jump.lua bases `new` on index_from and `old` on disk_from. The
+			-- +/- skip counting is right, so the jump is off by exactly (index_from - disk_from):
+			-- zero for a file's first hunk, growing with each add/delete above it.
+			local jump = require("neogit.lib.jump")
+			function jump.translate_hunk_location(hunk, offset)
+				if not hunk or not hunk.lines then return end
+				if offset < 1 or offset > #hunk.lines then return end
+
+				return {
+					old = jump.adjust_row(hunk.index_from, offset, hunk.lines, "+"),
+					new = jump.adjust_row(hunk.disk_from, offset, hunk.lines, "-"),
+					line = hunk.lines[offset] or "",
+				}
+			end
+		end,
 		keys = {
 			{ "<leader>gg", "<cmd>Neogit<cr>", desc = "Show Neogit UI" }
 		}
@@ -867,6 +968,9 @@ require("lazy").setup({
 			require("0x96f").setup()
 			vim.cmd.colorscheme("0x96f")
 		end,
+	},
+	{
+		"h3pei/copy-file-path.nvim",
 	},
 	{
 		"navarasu/onedark.nvim",
@@ -915,3 +1019,29 @@ end
 if theme == "rexim" then
 	vim.cmd.colorscheme("gruver-darker")
 end
+
+local function rand32()
+  -- Run the command and capture output
+  local handle = io.popen("openssl rand -hex 32")
+  if not handle then
+    print("Failed to run openssl")
+    return
+  end
+
+  local result = handle:read("*a")
+  handle:close()
+
+  if not result then
+    print("No output from openssl")
+    return
+  end
+
+  -- Trim trailing newline
+  result = result:gsub("%s+$", "")
+
+  -- Insert at cursor
+  vim.api.nvim_put({ result }, "c", true, true)
+end
+
+-- Create the :Rand32 command
+vim.api.nvim_create_user_command("Rand32", rand32, {})
