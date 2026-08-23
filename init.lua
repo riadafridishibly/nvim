@@ -223,6 +223,26 @@ vim.api.nvim_create_autocmd("BufEnter", {
 	end,
 })
 
+-- Neogit's commit_view opens as a plain vsplit, which Neovim sizes 50/50; there's no
+-- ratio option upstream. Give the diff (right) 2/3 of the width so the status/log on the
+-- left keeps 1/3. Deferred: filetype is set before the window is shown, so bufwinid is
+-- only valid on the next tick.
+vim.api.nvim_create_autocmd("FileType", {
+	group = vim.api.nvim_create_augroup("neogit-commit-view-width", { clear = true }),
+	pattern = "NeogitCommitView",
+	desc = "Neogit: give the commit-diff vsplit 2/3 of the width",
+	callback = function(args)
+		vim.schedule(function()
+			local win = vim.fn.bufwinid(args.buf)
+			if win == -1 then return end
+			-- Only touch a real vertical split: skip floating windows and full-width (tab) layouts.
+			if vim.api.nvim_win_get_config(win).relative ~= "" then return end
+			if vim.api.nvim_win_get_width(win) >= vim.o.columns then return end
+			vim.api.nvim_win_set_width(win, math.floor(vim.o.columns * 2 / 3))
+		end)
+	end,
+})
+
 if vim.g.neovide then
 	vim.g.gui_font_default_size = 16
 	vim.g.gui_font_size = vim.g.gui_font_default_size
@@ -577,6 +597,15 @@ require("lazy").setup({
 			vim.keymap.set("", "<leader>fb", fzflua.buffers)
 			vim.keymap.set("", "<leader>f/", fzflua.lgrep_curbuf)
 			vim.keymap.set("", "<leader>fz", fzflua.resume, { desc = "Resume last fzf-lua" })
+			vim.keymap.set("", "<leader>fs", function()
+				local clients = vim.lsp.get_clients({ bufnr = 0, method = "textDocument/documentSymbol" })
+				if #clients > 0 then
+					fzflua.lsp_document_symbols()
+				else
+					fzflua.treesitter()
+				end
+			end, { desc = "Document symbols (treesitter fallback)" })
+			vim.keymap.set("", "<leader>fS", fzflua.lsp_live_workspace_symbols, { desc = "Workspace symbols" })
 			vim.keymap.set("", "gra", fzflua.lsp_code_actions, { desc = "Document codeaction" })
 			vim.keymap.set("", "<leader>la", fzflua.lsp_code_actions, { desc = "Document codeaction" })
 			vim.keymap.set("n", "<leader>ld", fzflua.lsp_document_diagnostics,
@@ -860,6 +889,9 @@ require("lazy").setup({
 		enabled = true,
 		config = function()
 			require('fff').setup({
+				-- modes[1] is the mode the picker opens in; <S-Tab> cycles the rest.
+				grep = { modes = { 'fuzzy', 'plain', 'regex' } },
+				git = { status_text_color = true }, -- colorize filename text, not just the sign column
 				layout = {
 					height = 0.9,
 					width = 0.9,
@@ -913,16 +945,12 @@ require("lazy").setup({
 				desc = 'LiFFFe grep',
 			},
 			{
-				"<leader>fz",
-				function()
-					require('fff').live_grep({
-						grep = {
-							modes = { 'fuzzy', 'plain' }
-						}
-					})
-				end,
-				desc = 'Live fffuzy grep',
-			}
+				-- Normal mode greps <cword>; visual mode greps the selection.
+				"<leader>fc",
+				function() require('fff').live_grep_under_cursor() end,
+				mode = { "n", "x" },
+				desc = 'FFF grep cursor word/selection',
+			},
 		}
 	},
 	{
