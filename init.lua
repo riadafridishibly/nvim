@@ -7,6 +7,10 @@ local theme = os.getenv("NVIM_THEME") or "minicyan"
 vim.keymap.set("n", "<Space>", "<Nop>", { silent = true })
 vim.g.mapleader = " "
 
+-- Use oil.nvim as the only file explorer; the builtin dir browser is read-only and
+-- has no remote provider, so its global `-` map sends oil-ssh:// buffers to the cwd.
+vim.g.loaded_nvim_dir_plugin = 1
+
 -------------------------------------------------------------------------------
 -- Preferences
 -------------------------------------------------------------------------------
@@ -71,6 +75,7 @@ vim.keymap.set("n", "<leader>w", "<cmd>w<cr>")
 vim.keymap.set("n", "<leader>;", "<cmd>Buffers<cr>")
 vim.keymap.set("n", "<leader>o", ':e <C-R>=expand("%:p:h") . "/" <cr>')
 vim.keymap.set("n", "<leader><leader>", "<c-^>")
+vim.keymap.set("n", "-", "<cmd>Oil<cr>", { desc = "Open parent directory (oil)" })
 
 -- Navigation
 vim.keymap.set("", "H", "^")
@@ -319,6 +324,45 @@ vim.api.nvim_create_user_command("TrimTrailingSpaces", function()
 	vim.api.nvim_win_set_cursor(0, pos)
 end, { desc = "Remove trailing spaces from the buffer" })
 
+-- Oil detail columns, toggled by `gi` in an oil buffer. The ssh adapter only supplies
+-- permissions and size; unsupported columns render empty.
+local oil_detail_columns = { "icon", "permissions", "size", { "mtime", format = "%Y-%m-%d %H:%M" } }
+
+--- Command line head and target path for the oil entry under the cursor. A shell here
+--- cannot use an oil-ssh:// url, so remote entries run through `ssh <host>` against the
+--- path as it exists on that host.
+---@return string|nil head Command line up to the point where the command name is typed
+---@return string|nil path
+local function oil_entry_target()
+	local oil = require("oil")
+	local entry = oil.get_cursor_entry()
+	if not entry then return nil end
+
+	local dir = oil.get_current_dir()
+	if dir then return "!", dir .. entry.name end
+
+	local ok, url = pcall(require("oil.adapters.ssh").parse_url, vim.api.nvim_buf_get_name(0))
+	if not ok then return nil end
+
+	local target = (url.user and url.user .. "@" or "") .. url.host
+	local args = url.port and ("-p " .. url.port .. " " .. target) or target
+	-- url_to_str joins host and path with its own "/", so a normalized (absolute) path
+	-- leaves the buffer name as oil-ssh://host//home/… and parse_url keeps that slash.
+	return "!ssh " .. args .. " ", "/" .. (url.path:gsub("^/+", "")) .. entry.name
+end
+
+--- Open a `:!` command line holding the entry's path, cursor where the command name goes:
+--- `file`, `stat`, `xxd`, ...
+local function oil_shell_cmdline()
+	local head, path = oil_entry_target()
+	if not head then return end
+
+	local arg = vim.fn.shellescape(path, true)
+	local back = string.rep("<Left>", vim.fn.strchars(arg) + 1)
+	vim.api.nvim_feedkeys(
+		":" .. head .. " " .. arg .. vim.api.nvim_replace_termcodes(back, true, false, true), "n", false)
+end
+
 require("lazy").setup({
 	{
 		"folke/snacks.nvim",
@@ -488,6 +532,7 @@ require("lazy").setup({
 	-- File explorer
 	{
 		"nvim-neo-tree/neo-tree.nvim",
+		enabled = false,
 		-- branch = "v3.x",
 		branch = "main",
 		dependencies = { "nvim-lua/plenary.nvim", "MunifTanjim/nui.nvim", "nvim-tree/nvim-web-devicons" },
@@ -966,7 +1011,20 @@ require("lazy").setup({
 		'stevearc/oil.nvim',
 		---@module 'oil'
 		---@type oil.SetupOpts
-		opts = {},
+		opts = {
+			columns = oil_detail_columns,
+			keymaps = {
+				["gi"] = {
+					function()
+						local detailed = #require("oil.config").columns > 1
+						require("oil").set_columns(detailed and { "icon" } or oil_detail_columns)
+					end,
+					mode = "n",
+					desc = "Toggle detail columns",
+				},
+				["g!"] = { oil_shell_cmdline, mode = "n", desc = "Shell command on entry" },
+			},
+		},
 		-- dependencies = { { "nvim-mini/mini.icons", opts = {} } },
 		dependencies = { "nvim-tree/nvim-web-devicons" },
 		lazy = false, -- No lazy plz for this
@@ -996,6 +1054,7 @@ require("lazy").setup({
 		"A7Lavinraj/fyler.nvim",
 		dependencies = { "nvim-mini/mini.icons" },
 		lazy = false, -- Necessary for `default_explorer` to work properly
+		enabled = true,
 		opts = {}
 	},
 	{
