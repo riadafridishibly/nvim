@@ -81,7 +81,8 @@ vim.keymap.set("n", "-", "<cmd>Oil<cr>", { desc = "Open parent directory (oil)" 
 vim.keymap.set("", "H", "^")
 vim.keymap.set("", "L", "$")
 vim.keymap.set("n", "<C-h>", "<C-w><C-h>", { desc = "Move left window" })
-vim.keymap.set("n", "<C-l>", "<C-w><C-l>", { desc = "Move right window" })
+-- Shadows default <C-l> (:h CTRL-L-default), which clears multicursors
+-- vim.keymap.set("n", "<C-l>", "<C-w><C-l>", { desc = "Move right window" })
 vim.keymap.set("n", "<C-j>", "<C-w><C-j>", { desc = "Move down window" })
 vim.keymap.set("n", "<C-k>", "<C-w><C-k>", { desc = "Move up window" })
 vim.keymap.set("n", "<C-w>z", function() require("snacks").zen.zoom() end,
@@ -251,7 +252,7 @@ vim.api.nvim_create_autocmd("FileType", {
 if vim.g.neovide then
 	vim.g.gui_font_default_size = 16
 	vim.g.gui_font_size = vim.g.gui_font_default_size
-	vim.g.gui_font_face = "Maple Mono"
+	vim.g.gui_font_face = "Iosevka Brick"
 
 	RefreshGuiFont = function()
 		vim.opt.guifont = string.format("%s:h%s", vim.g.gui_font_face, vim.g.gui_font_size)
