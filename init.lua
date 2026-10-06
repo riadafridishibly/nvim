@@ -375,7 +375,29 @@ require("lazy").setup({
 			styles = { input = { relative = "cursor" } }
 		},
 	},
-
+	{
+		"folke/zen-mode.nvim",
+		opts = {
+			window = {
+				backdrop = 0.96, -- shade the backdrop of the Zen window. Set to 1 to keep the same as Normal
+				-- height and width can be:
+				-- * an absolute number of cells when > 1
+				-- * a percentage of the width / height of the editor when <= 1
+				-- * a function that returns the width or the height
+				width = 73, -- width of the Zen window
+				height = 1, --
+				options = {
+					-- signcolumn = "no", -- disable signcolumn
+					number = false, -- disable number column
+					relativenumber = false, -- disable relative numbers
+					cursorline = false, -- disable cursorline
+					cursorcolumn = false, -- disable cursor column
+					foldcolumn = "0", -- disable fold column
+					-- list = false, -- disable whitespace characters
+				},
+			},
+		},
+	},
 	{
 		'sainnhe/gruvbox-material',
 		enabled = theme == "gruvbox",
@@ -1164,26 +1186,26 @@ if theme == "rexim" then
 end
 
 local function rand32()
-  -- Run the command and capture output
-  local handle = io.popen("openssl rand -hex 32")
-  if not handle then
-    print("Failed to run openssl")
-    return
-  end
+	-- Run the command and capture output
+	local handle = io.popen("openssl rand -hex 32")
+	if not handle then
+		print("Failed to run openssl")
+		return
+	end
 
-  local result = handle:read("*a")
-  handle:close()
+	local result = handle:read("*a")
+	handle:close()
 
-  if not result then
-    print("No output from openssl")
-    return
-  end
+	if not result then
+		print("No output from openssl")
+		return
+	end
 
-  -- Trim trailing newline
-  result = result:gsub("%s+$", "")
+	-- Trim trailing newline
+	result = result:gsub("%s+$", "")
 
-  -- Insert at cursor
-  vim.api.nvim_put({ result }, "c", true, true)
+	-- Insert at cursor
+	vim.api.nvim_put({ result }, "c", true, true)
 end
 
 -- Create the :Rand32 command
