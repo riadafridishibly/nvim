@@ -379,7 +379,7 @@ require("lazy").setup({
 		"folke/zen-mode.nvim",
 		opts = {
 			window = {
-				backdrop = 0.96, -- shade the backdrop of the Zen window. Set to 1 to keep the same as Normal
+				backdrop = 1, -- shade the backdrop of the Zen window. Set to 1 to keep the same as Normal
 				-- height and width can be:
 				-- * an absolute number of cells when > 1
 				-- * a percentage of the width / height of the editor when <= 1
@@ -957,6 +957,14 @@ require("lazy").setup({
 		enabled = true,
 		config = function()
 			require('fff').setup({
+				-- Indexing all of $HOME (~550k files) keeps threads in file I/O, so quitting
+				-- nvim started in ~ blocks in kernel exit for many seconds.
+				enable_home_dir_scanning = false,
+				-- Index on first picker open instead of at startup.
+				lazy_sync = true,
+				-- No file-access / query history writes.
+				frecency = { enabled = false },
+				history = { enabled = false },
 				-- modes[1] is the mode the picker opens in; <S-Tab> cycles the rest.
 				grep = { modes = { 'fuzzy', 'plain', 'regex' } },
 				git = { status_text_color = true }, -- colorize filename text, not just the sign column
