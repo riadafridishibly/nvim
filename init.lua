@@ -186,7 +186,8 @@ vim.api.nvim_create_autocmd("Filetype", {
 	callback = function()
 		-- Only apply to modifiable buffers, not LSP hover (which is nomodifiable)
 		if vim.bo.modifiable then
-			vim.opt_local.spell = true
+			-- Harper handles spelling in markdown
+			vim.opt_local.spell = vim.bo.filetype ~= "markdown"
 			vim.opt_local.wrap = true
 			-- vim.opt_local.textwidth = 80
 			-- vim.opt_local.colorcolumn = "81"
@@ -794,6 +795,18 @@ require("lazy").setup({
 				},
 			})
 			vim.lsp.enable("rust_analyzer")
+
+			-- Grammar checking for prose. The default filetypes also lint code
+			-- comments, so restrict to prose formats.
+			vim.lsp.config("harper_ls", {
+				filetypes = { "markdown", "gitcommit", "tex", "typst", "asciidoc", "jjdescription" },
+				settings = {
+					["harper-ls"] = {
+						dialect = "American",
+					},
+				},
+			})
+			vim.lsp.enable("harper_ls")
 
 			vim.keymap.set("n", "<leader>D", function()
 				vim.diagnostic.open_float({ border = "rounded", source = true, severity_sort = true })
